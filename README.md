@@ -19,14 +19,12 @@ A project simulating the dynamics of the wolf population in the eastern part of 
 
    ```bash
    pip install PyQt5 pygame
-   
    ```
 
 3. Run the simulation:
 
-   ```
+   ```bash
    python main.py
-   
    ```
 
 ---

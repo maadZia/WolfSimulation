@@ -174,32 +174,38 @@ class PopulationModel:
     def handle_births(self, model, delta):
         """
         Zwiększa liczbę wilków podczas okresu narodzin.
+        Uwzględnia parametr birth_rate, aby znacząco wpływać na liczbę narodzin.
         """
-        # bierzemy agentow > 2 zeby pod rzad nie bylo dla tego samego wilka
+        # Wybieramy agentów, którzy mogą się rozmnażać (mają więcej niż 2 wilki w grupie)
         eligible_agents = [i for i, agent in enumerate(model.schedule) if agent.wolf_count > 2]
         if eligible_agents:
-            agents_to_update = random.randint(1, min(10, max(1, round(len(eligible_agents) // 5 * self.birth_rate))))
-            selected_agents = random.sample(eligible_agents, agents_to_update)
+            agents_to_update = max(1, round(len(eligible_agents) * self.birth_rate))
+            selected_agents = random.sample(eligible_agents, min(agents_to_update, len(eligible_agents)))
 
             for agent in selected_agents:
-                wolves_to_add = random.randint(2, 6)
+                wolves_to_add = random.randint(round(2 * self.birth_rate), round(6 * self.birth_rate))
+                # wolves_to_add = round(base_births * self.birth_rate)
                 model.schedule[agent].wolf_count += wolves_to_add
-                print(f"+{wolves_to_add}")
 
                 if model.schedule[agent].wolf_count > 10:
                     model.split_large_packs()
 
                 delta -= wolves_to_add
 
-                if delta > 0 and len(selected_agents) < 3:
-                    print(f"birth delta: {math.floor(delta)}")
-                    self.handle_births(model, delta)
+                if delta < 0:
+                    break
+
+            if delta > 0:
+                self.handle_births(model, delta)
 
     def handle_deaths(self, model, delta):
         """
         Zmniejsza liczbę wilków w okresie zimowym.
         """
         if delta < 0:
+            # Skalowanie delta w zależności od birth_rate
+            delta = delta * (1 - (self.birth_rate - 1))
+
             model.schedule.sort(key=lambda agent: agent.wolf_count)
 
             for agent in model.schedule:
